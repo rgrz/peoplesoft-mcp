@@ -35,19 +35,9 @@ def get_concepts_guide() -> str:
 def get_query_examples() -> str:
     """
     SQL Query Examples - Real-world PeopleSoft query patterns including
-    effective-dated queries, joins, and common HR/Payroll queries.
+    effective-dated queries, joins, and common HR/Payroll/GP queries.
     """
-    path = REFERENCE_DIR / "sql_query_examples.yaml"
-    return path.read_text()
-
-
-@mcp.resource("peoplesoft://key-tables")
-def get_key_tables() -> str:
-    """
-    Key Tables Reference - Quick reference for the most important 
-    PeopleSoft tables with their indexes and key columns.
-    """
-    path = REFERENCE_DIR / "key_tables.yaml"
+    path = REFERENCE_DIR / "sql_query_examples.md"
     return path.read_text()
 
 
