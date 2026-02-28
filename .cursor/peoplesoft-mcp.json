@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "peoplesoft": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/path/to/peoplesoft-mcp/",
+        "run",
+        "peoplesoft_server.py"
+      ]
+    }
+  }
+}
