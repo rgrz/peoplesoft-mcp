@@ -5,7 +5,7 @@ A Model Context Protocol (MCP) server that enables AI assistants to query and un
 ## Features
 
 - **39 semantic tools** covering all major PeopleSoft HCM modules
-- **6 documentation resources** for PeopleSoft concepts and query patterns
+- **4 documentation resources** for PeopleSoft concepts and query patterns
 - **Direct database access** via Oracle thin client (no JDBC required)
 - **PeopleTools introspection** for understanding system architecture
 - **Effective dating support** built into all queries
@@ -23,7 +23,7 @@ A Model Context Protocol (MCP) server that enables AI assistants to query and un
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd mcp_ps
+cd peoplesoft-mcp
 
 # Install dependencies
 uv sync
@@ -149,13 +149,12 @@ Credentials are loaded from `.env` automatically - no need to include them in th
 | `peoplesoft://schema-guide` | Major tables by module |
 | `peoplesoft://concepts` | Effective dating, EMPLID, SetID, XLAT |
 | `peoplesoft://query-examples` | SQL query patterns |
-| `peoplesoft://key-tables` | Important tables reference |
 | `peoplesoft://peopletools-guide` | PeopleTools architecture guide |
 
 ## Project Structure
 
 ```
-mcp_ps/
+peoplesoft-mcp/
 ├── peoplesoft_server.py    # Main MCP server entry point
 ├── db.py                   # Database connection management
 ├── tools/                  # Semantic tool modules
@@ -172,8 +171,9 @@ mcp_ps/
 │   ├── peoplesoft_concepts.md
 │   ├── peoplesoft_schema_guide.md
 │   ├── peopletools_guide.md
-│   ├── sql_query_examples.yaml
-│   └── key_tables.yaml
+│   └── sql_query_examples.md
+├── docs/
+│   └── migration-analysis.md   # Migration planning notes
 └── pyproject.toml          # Project configuration
 ```
 
@@ -236,5 +236,5 @@ MIT
 - Added PeopleTools introspection module (16 tools)
 - Added comprehensive test suites (42 tests)
 - Replaced connection pooling with direct connections for reliability
-- Added 6 documentation resources
+- Added 4 documentation resources
 - Improved effective dating patterns in all queries
