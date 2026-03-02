@@ -41,6 +41,11 @@ htmlcov/
 .env
 .env.local
 
+# Docs (local / experimental)
+docs/ABSV_REQUEST-technical-guide.md
+docs/agent-driven-architecture.md
+docs/mcp-tools-experiment-report.md
+
 
 # OS
 .DS_Store
