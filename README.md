@@ -43,7 +43,7 @@ ORACLE_USER=your_username
 ORACLE_PASSWORD=your_password
 ```
 
-3. Edit `.cursor/peoplesoft-mcp.json` and update the path to your installation.
+3. Edit `.cursor/mcp.json` and update the path to your installation.
 
 ### Running the Server
 
@@ -53,7 +53,7 @@ uv run peoplesoft_server.py
 
 ### Cursor IDE Integration
 
-The MCP config (`.cursor/peoplesoft-mcp.json`) should look like:
+The MCP config (`.cursor/mcp.json`) should look like:
 
 ```json
 {
