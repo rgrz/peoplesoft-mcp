@@ -19,6 +19,8 @@ def register_tools(mcp):
     mcp.tool()(get_integration_broker_services)
     mcp.tool()(get_message_definition)
     mcp.tool()(get_query_definition)
+    mcp.tool()(get_sql_definition)
+    mcp.tool()(search_sql_definitions)
     mcp.tool()(search_peoplecode)
     mcp.tool()(get_field_usage)
     mcp.tool()(get_translate_field_values)
@@ -202,7 +204,7 @@ async def get_component_structure(component_name: str) -> dict:
     """
     component_name = component_name.upper()
     
-    # Get component definition
+    # Get component definition (SAVEWARN omitted - not in all PeopleTools versions)
     comp_sql = """
         SELECT 
             C.PNLGRPNAME AS COMPONENT_NAME,
@@ -213,8 +215,7 @@ async def get_component_structure(component_name: str) -> dict:
             C.ACTIONS,
             C.PRIMARYACTION,
             C.DFLTACTION,
-            C.DEFERPROC,
-            C.SAVEWARN
+            C.DEFERPROC
         FROM PSPNLGRPDEFN C
         WHERE C.PNLGRPNAME = :1
     """
@@ -223,18 +224,18 @@ async def get_component_structure(component_name: str) -> dict:
     if "error" in comp_result or not comp_result.get("results"):
         return {"error": f"Component '{component_name}' not found"}
     
-    # Get pages in the component
+    # Get pages in the component (SUBITEMNUM - ITEMNUM not in all PeopleTools versions)
     pages_sql = """
         SELECT 
             P.PNLNAME AS PAGE_NAME,
-            P.ITEMNUM,
+            P.SUBITEMNUM AS ITEMNUM,
             P.HIDDEN,
             P.ITEMLABEL,
             PD.DESCR AS PAGE_DESCR
         FROM PSPNLGROUP P
         LEFT JOIN PSPNLDEFN PD ON P.PNLNAME = PD.PNLNAME
         WHERE P.PNLGRPNAME = :1
-        ORDER BY P.ITEMNUM
+        ORDER BY P.SUBITEMNUM
     """
     pages_result = await execute_query(pages_sql, [component_name])
     
@@ -295,7 +296,7 @@ async def get_page_fields(page_name: str) -> dict:
     if "error" in page_result or not page_result.get("results"):
         return {"error": f"Page '{page_name}' not found"}
     
-    # Get fields on the page
+    # Get fields on the page (DSPCTLFLDNAME/DSPCNTRLRECNAME omitted - not in all PeopleTools versions)
     fields_sql = """
         SELECT 
             F.FIELDNUM,
@@ -325,9 +326,7 @@ async def get_page_fields(page_name: str) -> dict:
             F.RECNAME,
             F.FIELDNAME,
             F.LBLTEXT,
-            F.OCCURSLEVEL,
-            F.DSPCTLFLDNAME,
-            F.DSPCNTRLRECNAME
+            F.OCCURSLEVEL
         FROM PSPNLFIELD F
         WHERE F.PNLNAME = :1
         ORDER BY F.OCCURSLEVEL, F.FIELDNUM
@@ -605,13 +604,12 @@ async def get_application_engine_steps(ae_program: str) -> dict:
     """
     ae_program = ae_program.upper()
     
-    # Get AE program header
+    # Get AE program header (AE_CMD_BTN_ENABLED omitted - not in all PeopleTools versions)
     header_sql = """
         SELECT 
             A.AE_APPLID AS PROGRAM_NAME,
             A.DESCR,
             A.AE_DISABLE_RESTART,
-            A.AE_CMD_BTN_ENABLED,
             A.OBJECTOWNERID
         FROM PSAEAPPLDEFN A
         WHERE A.AE_APPLID = :1
@@ -621,24 +619,19 @@ async def get_application_engine_steps(ae_program: str) -> dict:
     if "error" in header_result or not header_result.get("results"):
         return {"error": f"Application Engine '{ae_program}' not found"}
     
-    # Get sections and steps
+    # Get sections and steps (AE_SEQ_NUM, AE_ACTIVE_STATUS - AE_STEP_NBR/EFF_STATUS not in all PeopleTools versions)
     steps_sql = """
         SELECT 
             S.AE_SECTION AS SECTION_NAME,
             S.AE_STEP AS STEP_NAME,
-            S.AE_STEP_NBR AS STEP_ORDER,
+            S.AE_SEQ_NUM AS STEP_ORDER,
             S.MARKET,
             S.EFFDT,
-            S.EFF_STATUS,
-            S.AE_SQL_FLAG,
-            S.AE_DO_FLAG,
-            S.AE_CALL_FLAG,
-            S.AE_LOG_FLAG,
-            S.AE_PEOPLECOD_FLG AS HAS_PEOPLECODE,
-            S.AE_COMMIT_FLAG
+            S.AE_ACTIVE_STATUS AS EFF_STATUS,
+            S.DESCR AS STEP_DESCR
         FROM PSAESTEPDEFN S
         WHERE S.AE_APPLID = :1
-        ORDER BY S.AE_SECTION, S.AE_STEP_NBR
+        ORDER BY S.AE_SECTION, S.AE_SEQ_NUM
     """
     steps_result = await execute_query(steps_sql, [ae_program])
     
@@ -806,6 +799,137 @@ async def get_query_definition(query_name: str) -> dict:
         "query": query_result.get("results", [{}])[0],
         "records": records_result.get("results", []),
         "fields": fields_result.get("results", [])
+    }
+
+
+async def get_sql_definition(sql_id: str, max_length: int = 64000) -> dict:
+    """
+    Get the SQL text for a PeopleSoft SQL object by SQLID.
+    
+    PSSQLTEXTDEFN stores SQL used by views, App Engine programs, and PeopleCode
+    (SQL.SQLID). Long SQL is split across multiple rows by SEQNUM.
+    
+    Args:
+        sql_id: The SQL object ID (e.g. 'HR_ABSV_JOB_EFFDT', 'GP_PIN_SELECT')
+        max_length: Maximum total characters to return (default 64000).
+                    Use to avoid huge responses for very long SQL.
+    
+    Returns:
+        SQL definition with sql_text (concatenated from all SEQNUM rows),
+        sql_type, market, and row_count.
+    
+    Example:
+        get_sql_definition("HR_ABSV_JOB_EFFDT")
+    """
+    sql_id = sql_id.upper()
+    
+    # Fetch all segments ordered by SEQNUM; use DBMS_LOB.SUBSTR for CLOB
+    sql = """
+        SELECT 
+            SQLID,
+            SQLTYPE,
+            MARKET,
+            SEQNUM,
+            DBMS_LOB.SUBSTR(SQLTEXT, 14000, 1) AS SQLTEXT
+        FROM PSSQLTEXTDEFN
+        WHERE SQLID = :1
+        ORDER BY SEQNUM
+    """
+    result = await execute_query(sql, [sql_id])
+    
+    if "error" in result:
+        return result
+    
+    rows = result.get("results", [])
+    if not rows:
+        return {"error": f"SQL object '{sql_id}' not found"}
+    
+    # Concatenate SQL text from all segments
+    segments = []
+    total_len = 0
+    for row in rows:
+        txt = row.get("SQLTEXT") or ""
+        if isinstance(txt, str) and total_len < max_length:
+            remainder = max_length - total_len
+            segments.append(txt[:remainder] if len(txt) > remainder else txt)
+            total_len += len(txt)
+        elif hasattr(txt, "read"):  # LOB object
+            content = txt.read() if callable(getattr(txt, "read", None)) else str(txt)
+            if total_len < max_length:
+                remainder = max_length - total_len
+                segments.append(content[:remainder] if len(content) > remainder else content)
+                total_len += len(content)
+    
+    sql_text = "".join(segments)
+    truncated = total_len >= max_length
+    
+    sql_type_desc = {
+        "0": "Standard SQL",
+        "1": "PeopleCode",
+        "2": "COBOL",
+        "3": "SQR",
+    }
+    
+    return {
+        "sql_id": sql_id,
+        "sql_type": rows[0].get("SQLTYPE", ""),
+        "sql_type_desc": sql_type_desc.get(rows[0].get("SQLTYPE", ""), "Unknown"),
+        "market": rows[0].get("MARKET", ""),
+        "sql_text": sql_text,
+        "segment_count": len(rows),
+        "truncated": truncated,
+    }
+
+
+async def search_sql_definitions(search_term: str, limit: int = 50) -> dict:
+    """
+    Search for SQL object IDs whose text contains the given term.
+    
+    Useful for discovering which SQL objects reference a table, field, or
+    other identifier. Does not return full SQL text—use get_sql_definition
+    for that.
+    
+    Args:
+        search_term: Text to search for in SQL (e.g. 'PS_JOB', 'ABSV_REQUEST')
+        limit: Maximum number of SQLIDs to return (default 50)
+    
+    Returns:
+        List of matching SQLIDs with sql_type and market.
+    
+    Example:
+        search_sql_definitions("PS_ABSV_REQUEST")
+    """
+    search_pattern = f"%{search_term.upper()}%"
+    
+    # Use DBMS_LOB.INSTR for CLOB search; ROWNUM for limit (bind var compatibility)
+    sql = """
+        SELECT * FROM (
+            SELECT DISTINCT S.SQLID, S.SQLTYPE, S.MARKET
+            FROM PSSQLTEXTDEFN S
+            WHERE DBMS_LOB.INSTR(S.SQLTEXT, :1) > 0
+            ORDER BY S.SQLID
+        ) WHERE ROWNUM <= :2
+    """
+    result = await execute_query(sql, [search_pattern, limit])
+    
+    if "error" in result:
+        return result
+    
+    rows = result.get("results", [])
+    sql_type_desc = {"0": "Standard SQL", "1": "PeopleCode", "2": "COBOL", "3": "SQR"}
+    
+    return {
+        "search_term": search_term,
+        "matches": [
+            {
+                "sql_id": r["SQLID"],
+                "sql_type": r.get("SQLTYPE", ""),
+                "sql_type_desc": sql_type_desc.get(r.get("SQLTYPE", ""), "Unknown"),
+                "market": r.get("MARKET", ""),
+            }
+            for r in rows
+        ],
+        "match_count": len(rows),
     }
 
 
