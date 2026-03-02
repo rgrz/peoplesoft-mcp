@@ -510,6 +510,29 @@ SELECT QRYNAME, CLASSID, ACCESSLVL FROM PSQRYACCLST WHERE QRYNAME = 'MY_QUERY'
 
 ---
 
+## SQL Objects (PSSQLTEXTDEFN)
+
+PeopleSoft stores SQL text for views, Application Engine programs, PeopleCode (SQL.SQLID), and other objects in PSSQLTEXTDEFN. Long SQL is split across rows by SEQNUM.
+
+### Key Table
+
+```sql
+-- Get SQL text by SQLID
+SELECT SQLID, SQLTYPE, MARKET, SEQNUM, DBMS_LOB.SUBSTR(SQLTEXT, 14000, 1) AS SQLTEXT
+FROM PSSQLTEXTDEFN
+WHERE SQLID = 'HR_ABSV_JOB_EFFDT'
+ORDER BY SEQNUM
+
+-- Search for SQL objects referencing a table
+SELECT DISTINCT SQLID, SQLTYPE, MARKET
+FROM PSSQLTEXTDEFN
+WHERE DBMS_LOB.INSTR(SQLTEXT, 'PS_JOB') > 0
+```
+
+**MCP tools**: Use `get_sql_definition` and `search_sql_definitions` for structured access.
+
+---
+
 ## Common Development Tasks
 
 ### Finding Where a Field is Used

@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that enables AI assistants to query and un
 
 ## Features
 
-- **39 semantic tools** covering all major PeopleSoft HCM modules
+- **41 semantic tools** covering all major PeopleSoft HCM modules
 - **4 documentation resources** for PeopleSoft concepts and query patterns
 - **Direct database access** via Oracle thin client (no JDBC required)
 - **PeopleTools introspection** for understanding system architecture
@@ -117,7 +117,7 @@ Credentials are loaded from `.env` automatically - no need to include them in th
 | `get_review_details` | Get detailed review information |
 | `search_reviews` | Search reviews by criteria |
 
-### PeopleTools Module (16 tools)
+### PeopleTools Module (18 tools)
 | Tool | Description |
 |------|-------------|
 | `get_record_definition` | Full record structure with fields and keys |
@@ -132,6 +132,8 @@ Credentials are loaded from `.env` automatically - no need to include them in th
 | `get_integration_broker_services` | IB service operations |
 | `get_message_definition` | IB message structure |
 | `get_query_definition` | PS Query records and fields |
+| `get_sql_definition` | Get SQL text by SQLID (views, App Engine, PeopleCode) |
+| `search_sql_definitions` | Search SQL objects by text |
 | `search_peoplecode` | Search text within PeopleCode |
 | `get_field_usage` | Impact analysis - where a field is used |
 | `get_translate_field_values` | All XLAT values for a field |
@@ -173,6 +175,7 @@ peoplesoft-mcp/
 │   ├── peopletools_guide.md
 │   └── sql_query_examples.md
 ├── docs/
+│   ├── peopletools-tables-by-tool.md   # Tables required per tool
 │   └── migration-analysis.md   # Migration planning notes
 └── pyproject.toml          # Project configuration
 ```
@@ -207,6 +210,8 @@ The MCP enables natural language questions like:
 - "What fields does PS_JOB have?"
 - "Where is the DEPTID field used?"
 - "What PeopleCode runs on the JOB record?"
+- "What SQL does HR_ABSV_JOB_EFFDT use?"
+- "Search for SQL objects referencing PS_ABSV_REQUEST"
 - "Explain effective dating in PeopleSoft"
 
 ## Development
@@ -230,6 +235,12 @@ The MCP enables natural language questions like:
 MIT
 
 ## Changelog
+
+### v0.2.1 (2026-03-02)
+- Added `get_sql_definition` - fetch SQL text by SQLID from PSSQLTEXTDEFN
+- Added `search_sql_definitions` - search SQL objects by text
+- PeopleTools compatibility: adjusted PSPNLGROUP, PSPNLFIELD, PSAEAPPLDEFN, PSAESTEPDEFN queries for varying column names across PeopleTools versions
+- Added `docs/peopletools-tables-by-tool.md` - tables required per tool
 
 ### v0.2.0 (2026-02-28)
 - Added modular tool architecture with 39 semantic tools
