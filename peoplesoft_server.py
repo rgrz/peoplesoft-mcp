@@ -8,7 +8,7 @@ from db import execute_query, execute_query_with_limit
 
 mcp = FastMCP("peoplesoft-mcp")
 
-REFERENCE_DIR = Path(__file__).parent / "Reference_Documents"
+DOCS_DIR = Path(__file__).parent / "docs"
 
 
 @mcp.resource("peoplesoft://schema-guide")
@@ -17,7 +17,7 @@ def get_schema_guide() -> str:
     PeopleSoft Schema Guide - Lists all major tables organized by module 
     (HR, Payroll, Performance, Benefits, System).
     """
-    path = REFERENCE_DIR / "peoplesoft_schema_guide.md"
+    path = DOCS_DIR / "peoplesoft_schema_guide.md"
     return path.read_text()
 
 
@@ -27,7 +27,7 @@ def get_concepts_guide() -> str:
     PeopleSoft Concepts Primer - Explains effective dating, EMPLID/EMPL_RCD,
     SetID, translate values, and action codes.
     """
-    path = REFERENCE_DIR / "peoplesoft_concepts.md"
+    path = DOCS_DIR / "peoplesoft_concepts.md"
     return path.read_text()
 
 
@@ -37,7 +37,7 @@ def get_query_examples() -> str:
     SQL Query Examples - Real-world PeopleSoft query patterns including
     effective-dated queries, joins, and common HR/Payroll/GP queries.
     """
-    path = REFERENCE_DIR / "sql_query_examples.md"
+    path = DOCS_DIR / "sql_query_examples.md"
     return path.read_text()
 
 
@@ -48,7 +48,7 @@ def get_peopletools_guide() -> str:
     PeopleCode events, security, Process Scheduler, Application Engine,
     and Integration Broker.
     """
-    path = REFERENCE_DIR / "peopletools_guide.md"
+    path = DOCS_DIR / "peopletools_guide.md"
     return path.read_text()
 
 

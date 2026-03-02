@@ -169,12 +169,11 @@ peoplesoft-mcp/
 ├── tests/                  # Test suites
 │   ├── test_business_questions.py   # HR business scenarios
 │   └── test_peopletools_questions.py # Technical consultant scenarios
-├── Reference_Documents/    # Documentation resources
+├── docs/                   # Documentation resources
 │   ├── peoplesoft_concepts.md
 │   ├── peoplesoft_schema_guide.md
 │   ├── peopletools_guide.md
-│   └── sql_query_examples.md
-├── docs/
+│   ├── sql_query_examples.md
 │   ├── peopletools-tables-by-tool.md   # Tables required per tool
 │   └── migration-analysis.md   # Migration planning notes
 └── pyproject.toml          # Project configuration
