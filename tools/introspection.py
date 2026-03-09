@@ -30,7 +30,7 @@ def register_tools(mcp):
                 DF.FIELDTYPE,
                 DF.LENGTH,
                 DF.DECIMALPOS,
-                DF.DESCRLONG AS DESCRIPTION,
+                DBMS_LOB.SUBSTR(DF.DESCRLONG, 4000, 1) AS DESCRIPTION,
                 CASE WHEN RF.USEEDIT LIKE '%K%' THEN 'Y' ELSE 'N' END AS IS_KEY,
                 CASE WHEN RF.USEEDIT LIKE '%R%' THEN 'Y' ELSE 'N' END AS IS_REQUIRED,
                 CASE WHEN DF.FIELDTYPE = 1 THEN 'XLAT' ELSE NULL END AS HAS_TRANSLATE

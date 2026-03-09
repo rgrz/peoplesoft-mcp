@@ -10,7 +10,9 @@ def register_tools(mcp):
     mcp.tool()(get_record_definition)
     mcp.tool()(search_records)
     mcp.tool()(get_component_structure)
+    mcp.tool()(get_component_pages)
     mcp.tool()(get_page_fields)
+    mcp.tool()(get_page_field_bindings)
     mcp.tool()(get_peoplecode)
     mcp.tool()(get_permission_list_details)
     mcp.tool()(get_roles_for_permission_list)
@@ -96,7 +98,7 @@ async def get_record_definition(record_name: str) -> dict:
             END AS FIELDTYPE_DESC,
             D.LENGTH,
             D.DECIMALPOS,
-            D.DESCRLONG
+            DBMS_LOB.SUBSTR(D.DESCRLONG, 4000, 1) AS DESCRLONG
         FROM PSRECFIELD F
         JOIN PSDBFIELD D ON F.FIELDNAME = D.FIELDNAME
         WHERE F.RECNAME = :1
@@ -261,6 +263,45 @@ async def get_component_structure(component_name: str) -> dict:
     }
 
 
+async def get_component_pages(component_name: str) -> dict:
+    """
+    Get lightweight component-to-pages mapping. Uses only PSPNLGRPDEFN and
+    PSPNLGROUP with version-safe columns.
+    
+    Args:
+        component_name: The component name (e.g., 'JOB_DATA', 'ABSV_PLAN_TABLE')
+    
+    Returns:
+        Component name, search record, and list of pages with item number and label
+    """
+    component_name = component_name.upper()
+    
+    comp_sql = """
+        SELECT C.PNLGRPNAME, C.SEARCHRECNAME
+        FROM PSPNLGRPDEFN C
+        WHERE C.PNLGRPNAME = :1
+    """
+    comp_result = await execute_query(comp_sql, [component_name], fetch_one=True)
+    
+    if "error" in comp_result or not comp_result.get("results"):
+        return {"error": f"Component '{component_name}' not found"}
+    
+    pages_sql = """
+        SELECT P.PNLNAME, P.SUBITEMNUM AS ITEMNUM, P.ITEMLABEL
+        FROM PSPNLGROUP P
+        WHERE P.PNLGRPNAME = :1
+        ORDER BY P.SUBITEMNUM
+    """
+    pages_result = await execute_query(pages_sql, [component_name])
+    
+    comp_info = comp_result["results"][0]
+    return {
+        "component_name": comp_info.get("PNLGRPNAME"),
+        "search_record": comp_info.get("SEARCHRECNAME"),
+        "pages": pages_result.get("results", [])
+    }
+
+
 async def get_page_fields(page_name: str) -> dict:
     """
     Get all fields defined on a PeopleSoft page with their properties.
@@ -337,6 +378,42 @@ async def get_page_fields(page_name: str) -> dict:
         "page": page_result.get("results", [{}])[0],
         "fields": fields_result.get("results", []),
         "field_count": len(fields_result.get("results", []))
+    }
+
+
+async def get_page_field_bindings(page_name: str) -> dict:
+    """
+    Get simplified page field bindings: RECNAME, FIELDNAME, FIELDNUM, OCCURSLEVEL only.
+    Lightweight alternative when full page field properties are not needed.
+    
+    Args:
+        page_name: The page name (e.g., 'JOB_DATA1', 'ABSV_PLAN_TABLE')
+    
+    Returns:
+        Page name and list of record/field bindings
+    """
+    page_name = page_name.upper()
+    
+    page_check_sql = """
+        SELECT PNLNAME FROM PSPNLDEFN WHERE PNLNAME = :1
+    """
+    page_check = await execute_query(page_check_sql, [page_name], fetch_one=True)
+    
+    if "error" in page_check or not page_check.get("results"):
+        return {"error": f"Page '{page_name}' not found"}
+    
+    bindings_sql = """
+        SELECT F.RECNAME, F.FIELDNAME, F.FIELDNUM, F.OCCURSLEVEL
+        FROM PSPNLFIELD F
+        WHERE F.PNLNAME = :1
+        ORDER BY F.OCCURSLEVEL, F.FIELDNUM
+    """
+    bindings_result = await execute_query(bindings_sql, [page_name])
+    
+    return {
+        "page_name": page_name,
+        "bindings": bindings_result.get("results", []),
+        "binding_count": len(bindings_result.get("results", []))
     }
 
 

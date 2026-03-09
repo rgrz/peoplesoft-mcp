@@ -11,7 +11,9 @@ This document lists every PeopleTools metadata table required to run each tool i
 | `get_record_definition` | PSRECDEFN, PSRECFIELD, PSDBFIELD, PSKEYDEFN, PSINDEXDEFN |
 | `search_records` | PSRECDEFN |
 | `get_component_structure` | PSPNLGRPDEFN, PSPNLGROUP, PSPNLDEFN, PSMENUITEM |
+| `get_component_pages` | PSPNLGRPDEFN, PSPNLGROUP |
 | `get_page_fields` | PSPNLDEFN, PSPNLFIELD |
+| `get_page_field_bindings` | PSPNLDEFN, PSPNLFIELD |
 | `get_peoplecode` | PSPCMTXT |
 | `get_permission_list_details` | PSCLASSDEFN, PSAUTHITEM, PSQRYACCLST |
 | `get_roles_for_permission_list` | PSROLECLASS, PSROLEDEFN |

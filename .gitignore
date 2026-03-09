@@ -46,6 +46,12 @@ docs/ABSV_REQUEST-technical-guide.md
 docs/agent-driven-architecture.md
 docs/mcp-tools-experiment-report.md
 docs/migration-analysis.md
+docs/ABSV_PLAN_TABLE-documentation.md
+docs/agent-driven-architecture.md
+docs/mcp-tools-experiment-report.md
+docs/diagrams/*
+docs/DEPARTMENT_TBL-documentation.md
+
 
 # OS
 .DS_Store
